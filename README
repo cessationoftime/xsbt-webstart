@@ -44,7 +44,14 @@ Include the plugin in you project's build.sbt:
         maxHeapSize     = 192
     )
 
+Optionally, include the name of a jar containing the classes of all your libraries and project, 
+this is useful for the output of tools such as proguard:
+
+    webstartSingleJar := "singleJarName_2.9.1-0.0.1-SNAPSHOT.min.jar"
+
 Once set up you can use the following tasks in sbt:
 
-    webstart        creates a directory with a JNLP file and all necessary jar files
-    webstart-keygen creates a keyStore, fails if it already exists
+    webstart                  creates a directory with a JNLP file and all necessary jar files
+    webstart-singlejar        creates a directory with a JNLP file and all your specified jar file
+    webstart-keygen           creates a keyStore, fails if it already exists
+
