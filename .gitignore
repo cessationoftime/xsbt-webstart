@@ -1,3 +1,7 @@
+.cache
+.classpath
+.project
+.target/
 target/
 project/boot/
 project/plugins/project/
