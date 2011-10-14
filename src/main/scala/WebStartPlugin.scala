@@ -192,16 +192,37 @@ object WebStartPlugin extends Plugin {
   //------------------------------------------------------------------------------
   //## jar files
 
+  def copiedJars(jarsToCopy: Seq[java.io.File], products: Seq[java.io.File], outputDirectory: File) = {
+    jarsToCopy map { source =>
+      val main = products contains source
+      val target = outputDirectory / source.getName
+      val fresh = copyArchive(source, target)
+      Asset(main, fresh, target)
+    }
+  }
+
+  def logFreshAndUnchangedJars(assets: Seq[Asset], streams: TaskStreams) {
+    val (freshAssets, unchangedAssets) = assets partition { _.fresh }
+    streams.log info (freshAssets.size + " fresh jars, " + unchangedAssets.size + " unchanged jars")
+  }
+
   private def assetsSingleJarTask: Initialize[Task[Seq[Asset]]] = {
-    (Keys.crossTarget, webstartSingleJar, Keys.streams) map {
-      (crossTarg: File, singleJarFileName: String, streams: TaskStreams) =>
+    (Keys.crossTarget, webstartSingleJar, Keys.streams, Keys.products in Runtime, Keys.fullClasspath in Runtime, Keys.cacheDirectory, webstartOutputDirectory) map {
+      (crossTarg: File, singleJarFileName: String, streams: TaskStreams, products, fullClasspath, cacheDirectory: File, outputDirectory: File) =>
         {
           require(singleJarFileName != null, webstartSingleJar.key.label + " must be set")
 
-          val singleJarFile = (crossTarg / singleJarFileName)
+          streams.log info ("using single jar: " + singleJarFileName)
 
-          streams.log info ("using single jar: " + singleJarFile.getName())
-          Seq(Asset(true, true, singleJarFile))
+          val singleJarSeq = Seq(crossTarg / singleJarFileName)
+
+          streams.log info ("copying single jar")
+          val assets = copiedJars(singleJarSeq, products, outputDirectory);
+
+          logFreshAndUnchangedJars(assets, streams)
+
+          assets
+
         }
     }
   }
@@ -226,16 +247,9 @@ object WebStartPlugin extends Plugin {
           }
 
           streams.log info ("copying library jars")
-          val archiveAssets = archives map { source =>
-            val main = products contains source
-            val target = outputDirectory / source.getName
-            val fresh = copyArchive(source, target)
-            Asset(main, fresh, target)
-          }
+          val assets = copiedJars(archives, products, outputDirectory) ++ directoryAssets
 
-          val assets = archiveAssets ++ directoryAssets
-          val (freshAssets, unchangedAssets) = assets partition { _.fresh }
-          streams.log info (freshAssets.size + " fresh jars, " + unchangedAssets.size + " unchanged jars")
+          logFreshAndUnchangedJars(assets, streams)
 
           assets
         }
