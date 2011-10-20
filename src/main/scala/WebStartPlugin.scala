@@ -1,9 +1,9 @@
 import sbt._
-
 import Keys.Classpath
 import Keys.TaskStreams
 import Project.Initialize
 import classpath.ClasspathUtilities
+import scala.xml.Text
 
 object WebStartPlugin extends Plugin {
   //------------------------------------------------------------------------------
@@ -33,6 +33,11 @@ object WebStartPlugin extends Plugin {
     j2seVersion: String,
     maxHeapSize: Int)
 
+  case class AppletDescConf(
+    name: String,
+    width: Int,
+    height: Int)
+
   //------------------------------------------------------------------------------
   //## exported
 
@@ -44,6 +49,7 @@ object WebStartPlugin extends Plugin {
   val webstartOutputDirectory = SettingKey[File]("webstart-output-directory")
   val webstartResources = SettingKey[PathFinder]("webstart-resources")
   val webstartMainClass = SettingKey[String]("webstart-main-class")
+  val webstartApplet = SettingKey[AppletDescConf]("webstart-applet")
   val webstartGenConf = SettingKey[GenConf]("webstart-gen-conf")
   val webstartKeyConf = SettingKey[KeyConf]("webstart-key-conf")
   val webstartJnlpConf = SettingKey[JnlpConf]("webstart-jnlp-conf")
@@ -61,6 +67,7 @@ object WebStartPlugin extends Plugin {
     webstartOutputDirectory <<= (Keys.crossTarget) { _ / "webstart" },
     webstartResources <<= (Keys.sourceDirectory in Runtime) { _ / "webstart" },
     webstartMainClass := null,
+    webstartApplet := null,
     webstartGenConf := null,
     webstartKeyConf := null,
     webstartJnlpConf := null,
@@ -90,11 +97,10 @@ object WebStartPlugin extends Plugin {
 
   private def buildTask(webAssets: TaskKey[Seq[Asset]]): Initialize[Task[File]] = {
 
-    (Keys.streams, webAssets, webstartMainClass, webstartKeyConf, webstartJnlpConf, webstartResources, webstartExtraFiles, webstartOutputDirectory) map {
-      (streams: TaskStreams, assets, mainClass: String, keyConf: KeyConf, jnlpConf: JnlpConf, webstartResources: PathFinder, extraFiles: Seq[File], outputDirectory: File) =>
+    (Keys.streams, webAssets, webstartMainClass, webstartApplet, webstartKeyConf, webstartJnlpConf, webstartResources, webstartExtraFiles, webstartOutputDirectory) map {
+      (streams: TaskStreams, assets, mainClass: String, applet: AppletDescConf, keyConf: KeyConf, jnlpConf: JnlpConf, webstartResources: PathFinder, extraFiles: Seq[File], outputDirectory: File) =>
         {
-
-          require(mainClass != null, webstartMainClass.key.label + " must be set")
+          require(mainClass != null, webstartMainClass.key.label + " or must be defined");
           require(jnlpConf != null, webstartJnlpConf.key.label + " must be set")
 
           val freshAssets = assets filter { _.fresh }
@@ -113,7 +119,7 @@ object WebStartPlugin extends Plugin {
           // @see http://download.oracle.com/javase/tutorial/deployment/deploymentInDepth/jnlpFileSyntax.html
           streams.log info ("creating jnlp descriptor")
           val jnlpFile = outputDirectory / jnlpConf.fileName
-          writeJnlp(jnlpConf, assets, mainClass, jnlpFile)
+          writeJnlp(jnlpConf, assets, mainClass, applet, jnlpFile)
 
           // TODO check
           // Keys.defaultExcludes
@@ -165,7 +171,16 @@ object WebStartPlugin extends Plugin {
     if (rc2 != 0) sys error ("verify failed: " + rc2)
   }
 
-  private def writeJnlp(jnlpConf: JnlpConf, assets: Seq[Asset], mainClass: String, targetFile: File) {
+  //JaNeLa http://pscode.org/janela/
+  //The Java Network Launch Analyzer (JaNeLA) is a tool designed to check
+  //aspects of the JNLP file(s) and resources intended for the JWS based launch of a rich-client Java application.
+  private def writeJnlp(jnlpConf: JnlpConf, assets: Seq[Asset], mainClass: String, applet: AppletDescConf, targetFile: File) {
+    implicit def optStrToOptText(opt: Option[String]) = opt map Text
+
+    def applicationDesc = <application-desc main-class={ mainClass }/>
+    def appletDesc = <applet-desc name={ applet.name } main-class={ mainClass } width={ applet.width.toString } height={ applet.height.toString }/>
+    def appDesc = if (applet != null) appletDesc else applicationDesc;
+
     val xml =
       """<?xml version="1.0" encoding="utf-8"?>""" + "\n" +
         <jnlp spec="1.5+" codebase={ jnlpConf.codeBase } href={ jnlpConf.fileName }>
@@ -181,10 +196,10 @@ object WebStartPlugin extends Plugin {
             { if (jnlpConf.allPermissions) Seq(<all-permissions/>) else Seq.empty }
           </security>
           <resources>
-            <j2se version={ jnlpConf.j2seVersion } max-heap-size={ jnlpConf.maxHeapSize + "m" }/>
+            <j2se version={ jnlpConf.j2seVersion } max-heap-size={ jnlpConf.maxHeapSize + "m" } href="http://java.sun.com/products/autodl/j2se"/>
             { assets map { it => <jar href={ it.name } main={ it.main.toString }/> } }
           </resources>
-          <application-desc main-class={ mainClass }/>
+          { appDesc }
         </jnlp>
     IO write (targetFile, xml)
   }
@@ -192,9 +207,9 @@ object WebStartPlugin extends Plugin {
   //------------------------------------------------------------------------------
   //## jar files
 
-  def copiedJars(jarsToCopy: Seq[java.io.File], products: Seq[java.io.File], outputDirectory: File) = {
+  def copiedJars(jarsToCopy: Seq[java.io.File], isMain: File => Boolean, outputDirectory: File) = {
     jarsToCopy map { source =>
-      val main = products contains source
+      val main = isMain(source)
       val target = outputDirectory / source.getName
       val fresh = copyArchive(source, target)
       Asset(main, fresh, target)
@@ -217,7 +232,8 @@ object WebStartPlugin extends Plugin {
           val singleJarSeq = Seq(crossTarg / singleJarFileName)
 
           streams.log info ("copying single jar")
-          val assets = copiedJars(singleJarSeq, products, outputDirectory);
+
+          val assets = copiedJars(singleJarSeq, _ => true, outputDirectory);
 
           logFreshAndUnchangedJars(assets, streams)
 
@@ -247,7 +263,7 @@ object WebStartPlugin extends Plugin {
           }
 
           streams.log info ("copying library jars")
-          val assets = copiedJars(archives, products, outputDirectory) ++ directoryAssets
+          val assets = copiedJars(archives, products contains _, outputDirectory) ++ directoryAssets
 
           logFreshAndUnchangedJars(assets, streams)
 
