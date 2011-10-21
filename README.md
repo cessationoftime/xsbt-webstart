@@ -1,12 +1,12 @@
-[Integrate xsbt-webstart with xsbt-proguard-plugin]: https://github.com/cessationoftime/xsbt-webstart/wiki/Webstart-Integration-with-Proguard-plugin
+[integrate xsbt-webstart with xsbt-proguard-plugin]: https://github.com/cessationoftime/xsbt-webstart/wiki/Webstart-Integration-with-Proguard-plugin
+[SBT]: https://github.com/harrah/xsbt
 
 A Webstart plugin for xsbt
 
 At the moment, this is only a rough draft, just enough to get my own
 projects running. Let me know what you think.
 
-To build this code, get and install SBT from 
-    https://github.com/harrah/xsbt
+To build this code, get and install [SBT] 
 
 Build and publish the plugin:
     git clone git@github.com:ritschwumm/xstb-webstart.git
@@ -60,8 +60,7 @@ this is useful for the output of tools such as proguard:
 
     webstartSingleJar := "singleJarName_2.9.1-0.0.1-SNAPSHOT.min.jar"
 
-    For command integration with Proguard see: 
-    [Integrate xsbt-webstart with xsbt-proguard-plugin]
+See the wiki to [integrate xsbt-webstart with xsbt-proguard-plugin] and create commands that execute both serially
 
 Once set up you can use the following tasks in sbt:
 
