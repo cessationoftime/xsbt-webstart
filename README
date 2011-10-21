@@ -58,7 +58,8 @@ this is useful for the output of tools such as proguard:
 
     webstartSingleJar := "singleJarName_2.9.1-0.0.1-SNAPSHOT.min.jar"
 
-    For command integration with Proguard see the wiki.
+    For command integration with Proguard see: 
+    https://github.com/cessationoftime/xsbt-webstart/wiki/Webstart-Integration-with-Proguard-plugin
 
 Once set up you can use the following tasks in sbt:
 
