@@ -1,17 +1,19 @@
-[Integrate xsbt-webstart with xsbt-proguard-plugin]: https://github.com/cessationoftime/xsbt-webstart/wiki/Webstart-Integration-with-Proguard-plugin
+[integrate xsbt-webstart with xsbt-proguard-plugin]: https://github.com/cessationoftime/xsbt-webstart/wiki/Webstart-Integration-with-Proguard-plugin
+[SBT]: https://github.com/harrah/xsbt
 
 A Webstart plugin for xsbt
 
 At the moment, this is only a rough draft, just enough to get my own
 projects running. Let me know what you think.
 
-To build this code, get and install SBT from 
-    https://github.com/harrah/xsbt
+To build this code, get and install [SBT] 
 
 Build and publish the plugin:
+
     git clone git@github.com:ritschwumm/xstb-webstart.git
     cd xstb-webstart
     sbt publish-local
+    
     
 Add the plugin to your project in project/plugins/build.sbt:
     addSbtPlugin("de.djini" % "xsbt-webstart" % "0.0.3")
@@ -46,8 +48,8 @@ Include the plugin in you project's build.sbt:
         maxHeapSize     = 192
     )
 
-    Optional: if you would like to build a jnlp Applet instead of a jnlp webstart Application then add this section. 
-    (broken at the moment, making this mandatory and causing the plugin to only create applets)
+Optional: if you would like to build a jnlp Applet instead of a jnlp webstart Application then add this section. 
+(broken at the moment, making this mandatory and causing the plugin to only create applets)
     
     webstartApplet     := AppletDescConf(
     	name 			= "DatawarehouseQuery",
@@ -60,8 +62,7 @@ this is useful for the output of tools such as proguard:
 
     webstartSingleJar := "singleJarName_2.9.1-0.0.1-SNAPSHOT.min.jar"
 
-    For command integration with Proguard see: 
-    [Integrate xsbt-webstart with xsbt-proguard-plugin]
+See the wiki to [integrate xsbt-webstart with xsbt-proguard-plugin] and create commands that execute both serially
 
 Once set up you can use the following tasks in sbt:
 
