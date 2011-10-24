@@ -30,7 +30,7 @@ object WebStartPlugin extends Plugin {
     offlineAllowed: Boolean,
     // NOTE if this is true, signing is mandatory
     allPermissions: Boolean,
-    j2seVersion: String,
+    javaVersions: List[String],
     maxHeapSize: Int)
 
   case class AppletDescConf(
@@ -196,7 +196,7 @@ object WebStartPlugin extends Plugin {
             { if (jnlpConf.allPermissions) Seq(<all-permissions/>) else Seq.empty }
           </security>
           <resources>
-            <j2se version={ jnlpConf.j2seVersion } max-heap-size={ jnlpConf.maxHeapSize + "m" } href="http://java.sun.com/products/autodl/j2se"/>
+            { jnlpConf.javaVersions map { jv => <java version={ jv } initial-heap-size="128m" max-heap-size={ jnlpConf.maxHeapSize + "m" } href="http://java.sun.com/products/autodl/j2se"/> } }
             { assets map { it => <jar href={ it.name } main={ it.main.toString }/> } }
           </resources>
           { appDesc }
