@@ -200,7 +200,7 @@ object WebStartPlugin extends Plugin {
             { //see http://www.oracle.com/technetwork/java/javase/autodownload-140472.html
               //available versions of JRE: http://java.com/inc/dtoolkit.xml
             }
-            <java version={ jnlpConf.javaVersions.mkString(" ") } initial-heap-size="128m" max-heap-size={ jnlpConf.maxHeapSize + "m" } href="http://java.sun.com/products/autodl/j2se"/>
+            { jnlpConf.javaVersions map { jv => <java version={ jv } initial-heap-size="128m" max-heap-size={ jnlpConf.maxHeapSize + "m" } href="http://java.sun.com/products/autodl/j2se"/> } }
             { assets map { it => <jar href={ it.name } main={ it.main.toString }/> } }
           </resources>
           { appDesc }
