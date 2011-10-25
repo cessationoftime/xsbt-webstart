@@ -174,6 +174,7 @@ object WebStartPlugin extends Plugin {
   //JaNeLa http://pscode.org/janela/
   //The Java Network Launch Analyzer (JaNeLA) is a tool designed to check
   //aspects of the JNLP file(s) and resources intended for the JWS based launch of a rich-client Java application.
+  //JNLP file syntax: http://download.oracle.com/javase/tutorial/deployment/deploymentInDepth/jnlpFileSyntax.html
   private def writeJnlp(jnlpConf: JnlpConf, assets: Seq[Asset], mainClass: String, applet: AppletDescConf, targetFile: File) {
     implicit def optStrToOptText(opt: Option[String]) = opt map Text
 
@@ -196,7 +197,10 @@ object WebStartPlugin extends Plugin {
             { if (jnlpConf.allPermissions) Seq(<all-permissions/>) else Seq.empty }
           </security>
           <resources>
-            { jnlpConf.javaVersions map { jv => <java version={ jv } initial-heap-size="128m" max-heap-size={ jnlpConf.maxHeapSize + "m" } href="http://java.sun.com/products/autodl/j2se"/> } }
+            { //see http://www.oracle.com/technetwork/java/javase/autodownload-140472.html
+              //available versions of JRE: http://java.com/inc/dtoolkit.xml
+            }
+            <java version={ jnlpConf.javaVersions.mkString(" ") } initial-heap-size="128m" max-heap-size={ jnlpConf.maxHeapSize + "m" } href="http://java.sun.com/products/autodl/j2se"/>
             { assets map { it => <jar href={ it.name } main={ it.main.toString }/> } }
           </resources>
           { appDesc }
