@@ -4,7 +4,7 @@ name			:= "xsbt-webstart"
 
 organization	:= "de.djini"
 
-version			:= "0.0.3-withinputfilter"
+version			:= "0.0.3"
 
 scalaVersion	:= "2.9.1"
 
